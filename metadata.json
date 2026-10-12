@@ -1,0 +1,7 @@
+{
+  "name": "NutriCampus — Smart Mess Meal Planner & Food Waste Reducer",
+  "description": "College campus mess meal planning, student RSVP system, demand forecasting, and surplus food flash sale to reduce cafeteria waste.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
