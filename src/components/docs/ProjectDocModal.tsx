@@ -21,7 +21,9 @@ interface ProjectDocModalProps {
 }
 
 export const ProjectDocModal: React.FC<ProjectDocModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'prd' | 'architecture' | 'schema' | 'rules' | 'viva'>('prd');
+  const [activeTab, setActiveTab] = useState<
+    'prd' | 'architecture' | 'schema' | 'rules' | 'mongodb' | 'viva'
+  >('prd');
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -129,8 +131,9 @@ service cloud.firestore {
         <div className="flex items-center gap-1 px-6 pt-3 border-b border-slate-200 bg-slate-50 text-xs overflow-x-auto">
           {[
             { id: 'prd', label: 'PRD Document', icon: FileText },
+            { id: 'mongodb', label: 'MongoDB Atlas Setup', icon: Database },
             { id: 'architecture', label: 'Formulas & Math', icon: Cpu },
-            { id: 'schema', label: 'Firestore Collections', icon: Database },
+            { id: 'schema', label: 'Database Schema', icon: Database },
             { id: 'rules', label: 'Security Rules', icon: ShieldCheck },
             { id: 'viva', label: 'Viva Examiner Script', icon: Award },
           ].map((tab) => {
@@ -248,6 +251,143 @@ service cloud.firestore {
                     <strong className="text-slate-900 block mb-0.5">FR-4: Sustainability Telemetry</strong>
                     Tracks Redistribution Rate % and EPA-standard carbon avoided (2.5 kg CO2e per kg food saved) via Chart.js.
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: MONGODB ATLAS SETUP */}
+          {activeTab === 'mongodb' && (
+            <div className="space-y-5 text-xs text-slate-700">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-emerald-950">
+                    Connecting NutriCampus to MongoDB Atlas Database
+                  </h3>
+                  <p className="text-[11px] text-emerald-800 mt-0.5">
+                    Step-by-step guide to provisioning, whitelisting, configuring URI, and verifying documents.
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    copyToClipboard(
+                      'MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.abcde.mongodb.net/nutricampus?retryWrites=true&w=majority"',
+                      'mongo_env'
+                    )
+                  }
+                  className="px-3 py-1.5 bg-[#1C3B2B] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-[#27533c] transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>{copiedSection === 'mongo_env' ? 'Copied' : 'Copy URI Template'}</span>
+                </button>
+              </div>
+
+              {/* Step 1 */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#1C3B2B] text-lime-400 font-bold flex items-center justify-center text-[11px]">
+                    1
+                  </span>
+                  <strong className="text-slate-900 text-sm">Create a MongoDB Atlas Account & Cluster</strong>
+                </div>
+                <p className="text-slate-600 pl-7 leading-relaxed">
+                  Go to <a href="https://cloud.mongodb.com" target="_blank" rel="noreferrer" className="text-emerald-700 font-bold underline">cloud.mongodb.com</a>. Create an account or sign in. Deploy a free <strong>M0 Shared Cluster</strong> (select your closest cloud provider and region, e.g. AWS Mumbai or Singapore).
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#1C3B2B] text-lime-400 font-bold flex items-center justify-center text-[11px]">
+                    2
+                  </span>
+                  <strong className="text-slate-900 text-sm">Create Database User Credentials</strong>
+                </div>
+                <div className="pl-7 space-y-1.5 text-slate-600">
+                  <p>In the Atlas dashboard sidebar under <strong>Security</strong>, click <strong>Database Access</strong>.</p>
+                  <p>Click <strong>Add New Database User</strong>.</p>
+                  <ul className="list-disc list-inside space-y-1 pl-2">
+                    <li>Authentication Method: <strong>Password</strong></li>
+                    <li>Username: e.g. <code>canteen_admin</code> or your preferred username</li>
+                    <li>Password: create a secure password (avoid raw symbols like <code>@</code> or <code>%</code> without URL encoding, or use alphanumeric)</li>
+                    <li>Built-in Role: <strong>Read and write to any database</strong></li>
+                  </ul>
+                  <p className="text-amber-800 font-medium">Click <strong>Add User</strong> and keep your credentials handy.</p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#1C3B2B] text-lime-400 font-bold flex items-center justify-center text-[11px]">
+                    3
+                  </span>
+                  <strong className="text-slate-900 text-sm">Configure Network Access (IP Whitelist)</strong>
+                </div>
+                <div className="pl-7 space-y-1.5 text-slate-600">
+                  <p className="text-rose-700 font-semibold">
+                    *Crucial Step: Cloud containers change outbound IPs dynamically. Without this, Atlas rejects connections.
+                  </p>
+                  <p>In the Atlas sidebar under <strong>Security</strong>, click <strong>Network Access</strong>.</p>
+                  <p>Click <strong>Add IP Address</strong> $\rightarrow$ click <strong>Allow Access from Anywhere</strong> (sets IP to <code>0.0.0.0/0</code>) or add your current development environment IP.</p>
+                  <p>Click <strong>Confirm</strong> and wait 30 seconds until the status badge shows <span className="text-emerald-700 font-bold">Active</span>.</p>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#1C3B2B] text-lime-400 font-bold flex items-center justify-center text-[11px]">
+                    4
+                  </span>
+                  <strong className="text-slate-900 text-sm">Obtain the MongoDB Connection String</strong>
+                </div>
+                <div className="pl-7 space-y-1.5 text-slate-600">
+                  <p>Under <strong>Deployment</strong>, click <strong>Database</strong> $\rightarrow$ click <strong>Connect</strong> next to your cluster.</p>
+                  <p>Choose <strong>Drivers</strong> (Driver: Node.js, Version: 4.1 or later).</p>
+                  <p>Copy the connection string and insert <code>/nutricampus</code> before the <code>?</code> query parameters:</p>
+                  <pre className="bg-slate-900 text-emerald-300 p-3 rounded-lg font-mono text-[11px] overflow-x-auto whitespace-pre">
+mongodb+srv://&lt;username&gt;:&lt;password&gt;@&lt;cluster-host&gt;/nutricampus?retryWrites=true&w=majority
+                  </pre>
+                </div>
+              </div>
+
+              {/* Step 5 */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#1C3B2B] text-lime-400 font-bold flex items-center justify-center text-[11px]">
+                    5
+                  </span>
+                  <strong className="text-slate-900 text-sm">Set Environment Variable in .env</strong>
+                </div>
+                <div className="pl-7 space-y-1.5 text-slate-600">
+                  <p>In the project root, open <code>.env</code> (or create it from <code>.env.example</code>):</p>
+                  <pre className="bg-slate-900 text-slate-200 p-3 rounded-lg font-mono text-[11px] overflow-x-auto whitespace-pre">
+MONGODB_URI="mongodb+srv://jadegrenade519_db_user:YOUR_PASSWORD@webx.yi45ec8.mongodb.net/nutricampus?retryWrites=true&w=majority"
+                  </pre>
+                  <p className="text-slate-500 text-[11px]">
+                    The Express server automatically reads this at startup via <code>server/db.ts</code> and connects via Mongoose.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 6 */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#1C3B2B] text-lime-400 font-bold flex items-center justify-center text-[11px]">
+                    6
+                  </span>
+                  <strong className="text-slate-900 text-sm">Verify Saved Collections in Atlas Dashboard</strong>
+                </div>
+                <div className="pl-7 space-y-1.5 text-slate-600">
+                  <p>Submit a profile or place a food order from the website UI.</p>
+                  <p>In MongoDB Atlas, click <strong>Browse Collections</strong> on your cluster:</p>
+                  <ul className="list-disc list-inside space-y-1 pl-2">
+                    <li>Database: <strong><code>nutricampus</code></strong></li>
+                    <li>Collection 1: <strong><code>students</code></strong> (stores multi-student dietary preferences, allergens, and student IDs)</li>
+                    <li>Collection 2: <strong><code>orders</code></strong> (stores food tray orders, authoritative receipts, payment status, and items)</li>
+                  </ul>
+                  <p>You can also check server status at any time via <code>GET /api/db-status</code>.</p>
                 </div>
               </div>
             </div>

@@ -15,11 +15,16 @@ import { MealRsvp } from './components/student/MealRsvp';
 import { FlashSale } from './components/student/FlashSale';
 import { FoodProfile } from './components/student/FoodProfile';
 import { MyClaims } from './components/student/MyClaims';
+import { StudentOrders } from './components/student/StudentOrders';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminOrders } from './components/admin/AdminOrders';
 import { DemandForecast } from './components/admin/DemandForecast';
 import { SurplusBroadcast } from './components/admin/SurplusBroadcast';
 import { SustainabilityAnalytics } from './components/admin/SustainabilityAnalytics';
 import { MenuManagement } from './components/admin/MenuManagement';
+import { CartModal } from './components/orders/CartModal';
+import { ReceiptModal } from './components/orders/ReceiptModal';
+import { OrderRecord } from './services/orderApi';
 import { ProjectDocModal } from './components/docs/ProjectDocModal';
 
 export default function App() {
@@ -29,6 +34,9 @@ export default function App() {
 
   const [currentTab, setCurrentTab] = useState<ActiveTab>('student-overview');
   const [isDocsOpen, setIsDocsOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [receiptOrder, setReceiptOrder] = useState<OrderRecord | null>(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
   const handleSelectRoleFromLanding = (role: 'student' | 'admin') => {
     if (role === 'admin') {
@@ -38,6 +46,13 @@ export default function App() {
       store.switchUser('student-1');
       setCurrentTab('student-overview');
     }
+  };
+
+  const handleOrderSuccess = (order: OrderRecord) => {
+    setReceiptOrder(order);
+    setIsReceiptOpen(true);
+    // Switch to orders view so the student can track their fresh order
+    setCurrentTab('my-orders');
   };
 
   return (
@@ -50,6 +65,7 @@ export default function App() {
         currentTab={currentTab}
         onSelectTab={(tab) => setCurrentTab(tab)}
         onOpenDocs={() => setIsDocsOpen(true)}
+        onOpenCart={() => setIsCartOpen(true)}
       />
 
       {/* 3. Main Body Content Viewport */}
@@ -65,10 +81,18 @@ export default function App() {
         {currentTab === 'student-overview' && (
           <StudentDashboard onNavigate={(tab) => setCurrentTab(tab)} />
         )}
-        {currentTab === 'daily-menu' && <DailyMenu />}
+        {currentTab === 'daily-menu' && (
+          <DailyMenu
+            onNavigateToOrders={() => setCurrentTab('my-orders')}
+            onNavigateToRsvp={() => setCurrentTab('meal-rsvp')}
+          />
+        )}
         {currentTab === 'meal-rsvp' && <MealRsvp />}
         {currentTab === 'flash-sale' && (
           <FlashSale onNavigateToClaims={() => setCurrentTab('my-claims')} />
+        )}
+        {currentTab === 'my-orders' && (
+          <StudentOrders onNavigateToMenu={() => setCurrentTab('daily-menu')} />
         )}
         {currentTab === 'food-profile' && <FoodProfile />}
         {currentTab === 'my-claims' && (
@@ -79,16 +103,31 @@ export default function App() {
         {currentTab === 'admin-overview' && (
           <AdminDashboard onNavigate={(tab) => setCurrentTab(tab)} />
         )}
+        {currentTab === 'admin-orders' && <AdminOrders />}
         {currentTab === 'demand-forecast' && <DemandForecast />}
         {currentTab === 'surplus-broadcast' && <SurplusBroadcast />}
         {currentTab === 'sustainability-analytics' && <SustainabilityAnalytics />}
         {currentTab === 'menu-management' && <MenuManagement />}
       </main>
 
-      {/* 4. Footer */}
+      {/* 4. Global Cart Modal */}
+      <CartModal
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        onOrderSuccess={handleOrderSuccess}
+      />
+
+      {/* 5. Global Receipt Modal */}
+      <ReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        order={receiptOrder}
+      />
+
+      {/* 6. Footer */}
       <Footer onOpenDocs={() => setIsDocsOpen(true)} />
 
-      {/* 5. Mini-Project Viva Documentation Modal */}
+      {/* 7. Mini-Project Viva Documentation Modal */}
       <ProjectDocModal isOpen={isDocsOpen} onClose={() => setIsDocsOpen(false)} />
     </div>
   );

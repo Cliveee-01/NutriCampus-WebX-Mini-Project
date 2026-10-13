@@ -37,7 +37,7 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({ onOpenDocs }) => {
             College Viva Demo Mode
           </span>
           <span className="hidden sm:inline text-emerald-300/80">
-            Interactive Firestore & Node.js Engine
+            Node.js & MongoDB Backend (nutricampus.students)
           </span>
           {feedback && (
             <span className="text-emerald-200 font-medium bg-emerald-800/60 px-2 py-0.5 rounded transition-all">

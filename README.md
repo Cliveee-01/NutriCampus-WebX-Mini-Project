@@ -1,6 +1,6 @@
 # NutriCampus — Smart Mess Meal Planner & Food Waste Reducer
 
-A full-stack college mini-project web application designed to reduce food waste in university canteens by empowering students to RSVP for meals in advance, enabling canteen administrators to forecast ingredient demand dynamically, and redistributing surplus food through discounted flash sales.
+A full-stack college mini-project web application designed to reduce food waste in university canteens by empowering students to RSVP for meals in advance, enabling canteen administrators to forecast ingredient demand dynamically, redistributing surplus food through discounted flash sales, and managing student profiles in **MongoDB Atlas**.
 
 ---
 
@@ -12,7 +12,14 @@ A full-stack college mini-project web application designed to reduce food waste 
 3. **Dynamic Dietary Filters**: Real-time filtering for **Vegan**, **Gluten-Free**, and **High Protein** meals with strict validation so ingredients never contradict dietary claims.
 4. **Advance Meal RSVP System**: Real-time *Attending* vs *Not Attending* toggle. Enforces one authoritative record per student per session to eliminate duplicate RSVPs, respects kitchen cutoff times, and instantly syncs with kitchen demand forecasting.
 5. **Surplus Food Flash Sale**: Leftover kitchen batches offered at 50%–65% discount. Atomic claiming operations prevent double-claiming, generate unique digital claim tokens (e.g., `NC-7482`), and decrement stock in real time.
-6. **Student Food Profile**: Preferences (Vegan, Gluten-Free, High-Protein) highlight compliant dishes with a "Profile Match" indicator while maintaining accessible manual filters. Clearly distinguishes everyday dining preferences from institutional allergen safety warnings.
+6. **MongoDB Student Profile Management**: Persistent student profile connected directly to MongoDB Atlas. Stores:
+   - Full Name
+   - Student Email (normalized, unique)
+   - Student ID
+   - Room / Hostel
+   - Dietary Preferences (`Vegan`, `Gluten-Free`, `High Protein`)
+   - Food Allergies & Intolerances
+   - Auto-generated `createdAt` and `updatedAt` timestamps and unique MongoDB `_id`.
 7. **My Claims**: Digital token repository displaying pickup window countdowns, canteen counter locations, and personal kilograms of food waste prevented.
 
 ### B. Canteen Admin Portal
@@ -30,68 +37,114 @@ A full-stack college mini-project web application designed to reduce food waste 
    - Engineered estimate of edible waste avoided based on 450g per portion.
    - EPA-standard greenhouse gas abatement calculation: $2.5\text{ kg CO}_2\text{e}$ per kg food waste saved.
    - Interactive **Chart.js** Doughnut and Line trend charts for weekly waste prevention.
+5. **MongoDB Registered Student Records**: Secure administrative view (`GET /api/students`) allowing authorized cafeteria administrators to inspect all registered student profiles and dietary requirements.
 
 ---
 
-## 2. Database Schema (Firebase Firestore)
+## 2. MongoDB Database & Express Backend
 
-The application models its real-time data into 6 primary Firestore collections:
+### A. Database Topology
+- **Database Name**: `nutricampus`
+- **Collection Name**: `students`
+- **Object Model**: Managed via **Mongoose** schema with unique indexes on normalized lowercase email address.
 
-- `users/{userId}`: User profiles, role (`student` | `admin`), student roll number, dietary preferences, and declared allergies.
-- `meals/{mealId}`: Canteen menu offerings, session period, description, pricing, dietary tags, and portion recipes.
-- `mealRSVPs/{compoundId}`: Compound key (`${userId}_${period}_${date}`) guaranteeing atomic uniqueness of student meal commitments without duplicates.
-- `surplusOffers/{offerId}`: Discounted surplus announcements, available inventory counters, pickup deadlines, and status (`active`, `sold_out`, `expired`).
-- `surplusClaims/{claimId}`: Atomic reservation records linking student ID, offer ID, claim token code, and collection status.
-- `dailyAnalytics/{date}`: Aggregated daily statistics for food saved (kg), redistribution rate %, and student monetary savings.
+### B. Student Document Schema
+```json
+{
+  "_id": "670ae001f0123456789abc01",
+  "name": "Jaden Dsouza",
+  "email": "jaden.dsouza@campus.edu",
+  "studentId": "2023-CS-104",
+  "roomOrHostel": "Aryabhatta Hall, Rm 312",
+  "dietaryPreferences": ["High Protein"],
+  "allergies": ["Peanuts"],
+  "createdAt": "2026-10-12T10:00:00.000Z",
+  "updatedAt": "2026-10-12T10:35:00.000Z"
+}
+```
 
----
-
-## 3. Demonstration & Examiner Viva Walkthrough
-
-To demonstrate the full end-to-end functionality during a project viva presentation:
-
-1. **Step 1 (Student Menu & Dietary Filter)**: Open the **Daily Menu** and toggle the **"Vegan"** or **"High Protein"** filter. Observe that non-matching items filter out instantaneously.
-2. **Step 2 (Student RSVP)**: Navigate to **Meal RSVP** and set Lunch to **"Attending"**.
-3. **Step 3 (Admin Demand Forecast Update)**: Use the top bar switcher to switch to **Canteen Admin Portal** $\rightarrow$ **Demand Forecast**. Notice that the Lunch RSVP count and the calculated ingredient weights (Rice, Dal, Paneer) have increased.
-4. **Step 4 (Simulate Live Campus Batch)**: Click **"Simulate +8 RSVPs"** in the top demo banner. Observe the Demand Forecast bar chart and raw ingredient kilogram totals dynamically jump.
-5. **Step 5 (Admin Surplus Broadcast)**: In **Surplus Broadcast**, publish a new surplus offer with discounted price and quantity.
-6. **Step 6 (Student Flash Sale Claim)**: Switch back to **Student Portal** $\rightarrow$ **Flash Sale**. The new surplus meal is live. Click **Claim Surplus Meal**.
-7. **Step 7 (Atomic Claim Receipt)**: A modal displays **"Claimed Successfully!"** with a unique pickup reference code (e.g., `NC-8491`).
-8. **Step 8 (Inventory Decrement)**: Observe the available quantity decrement immediately. Attempting to claim again shows the duplicate claim safeguard.
-9. **Step 9 (Sustainability Analytics)**: Open **Analytics** in the Admin portal to inspect the updated **Redistribution Rate** and **Chart.js** charts.
-
----
-
-## 4. Local Setup & Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd nutricampus
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment Variables** (Optional for live Firebase):
-   Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Start the Development Server**:
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your web browser.
+### C. Backend REST Endpoints
+| Method | Endpoint | Description | Access Level |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/students` | Creates a new student profile document | Public / Authenticated Student |
+| `GET` | `/api/students` | Retrieves all registered student profiles | **Admin Only** (`x-user-role: admin`) |
+| `GET` | `/api/students/:id` | Retrieves profile by MongoDB `_id` or email | Owner Student or Admin |
+| `PUT` | `/api/students/:id` | Updates an existing student profile | Owner Student or Admin |
+| `DELETE` | `/api/students/:id` | Deletes a student profile document | Owner Student or Admin |
+| `GET` | `/api/db-status` | Health check for MongoDB connection & host | Public |
 
 ---
 
-## 5. Technology Stack
+## 3. Environment Variables & Setup Instructions
+
+### Step 1: Clone and Install Dependencies
+```bash
+git clone <repository-url>
+cd nutricampus
+npm install
+```
+
+### Step 2: Configure MongoDB Connection in `.env`
+Create a `.env` file in the project root:
+```bash
+cp .env.example .env
+```
+Set your MongoDB Atlas connection string in `.env`:
+```env
+MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.abcde.mongodb.net/nutricampus?retryWrites=true&w=majority"
+```
+*(Replace `<username>` and `<password>` with your MongoDB Atlas database user credentials).*
+
+### Step 3: Start the Full-Stack Application
+```bash
+npm run dev
+```
+The Express server starts on **http://localhost:3000**, connecting to MongoDB Atlas and serving the Vite React frontend with Hot Module Replacement and API proxying.
+
+---
+
+## 4. How to Verify Saved Records in MongoDB Atlas
+
+1. **Log in to MongoDB Atlas** at [cloud.mongodb.com](https://cloud.mongodb.com).
+2. In the left navigation sidebar, click on **Database** under Deployment.
+3. Find your cluster (e.g., `Cluster0`) and click **Browse Collections**.
+4. In the database list, locate the database named **`nutricampus`**.
+5. Click on the collection named **`students`**.
+6. You will see individual JSON documents for each registered student (e.g., Jaden Dsouza, Leon Dsouza, Clive Fernandes) containing:
+   - `_id`: Unique MongoDB ObjectId
+   - `name`: Student full name
+   - `email`: Normalized email string
+   - `dietaryPreferences`: Array of selected dietary tags
+   - `allergies`: Array of declared food allergies
+   - `createdAt` and `updatedAt`: Automatic ISO timestamps.
+7. Any update submitted from the website profile form updates the matching document in MongoDB Atlas instantly without page reload.
+
+---
+
+## 5. Multi-Student Independent Testing Scenarios
+
+To demonstrate multi-student isolation:
+1. **Student A (Jaden Dsouza)**:
+   - Select Jaden Dsouza in the persona switcher.
+   - Navigate to **Food Profile**.
+   - Check **High Protein Focus**, enter allergy `"Peanuts"`, and click **Save Preferences**.
+   - Confirm server response shows success with unique MongoDB `_id`.
+2. **Student B (Leon Dsouza)**:
+   - Switch persona to Leon Dsouza.
+   - Notice the form refreshes to Leon's own preferences (**100% Vegan**, **Gluten-Free**, zero allergies).
+   - Edit preferences and save.
+   - Verify in MongoDB Atlas that **both records exist as separate documents** and neither overwrites the other.
+3. **Admin Verification**:
+   - Switch persona to **Chef Leron & Mess Committee (Admin)**.
+   - Open **Food Profile** or Admin console to view the complete list of students retrieved from `GET /api/students`.
+   - Attempting `GET /api/students` from an unauthorized student persona returns HTTP 403 Forbidden.
+
+---
+
+## 6. Technology Stack
 
 - **Frontend**: React 19, TypeScript, Tailwind CSS v4, Lucide React, Motion.
+- **Backend**: Node.js, Express 4, TypeScript (`tsx`).
+- **Database & ODM**: MongoDB Atlas, Mongoose 9.
 - **Analytics Visualization**: Chart.js v4.
-- **Data Engine**: Reactive store with atomic transaction simulator and persistent `localStorage` synchronization (ready for direct Firestore SDK binding).
-- **Tooling**: Vite 8, tsx, Node.js / Express backend architecture.
+- **Tooling**: Vite 8, Dotenv, CORS.

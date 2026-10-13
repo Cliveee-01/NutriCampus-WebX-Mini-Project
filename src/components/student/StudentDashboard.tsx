@@ -65,10 +65,24 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
-              onClick={() => onNavigate('meal-rsvp')}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lime-400 hover:bg-lime-300 text-slate-950 font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
+              onClick={() => onNavigate('daily-menu')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lime-400 hover:bg-lime-300 text-slate-950 font-semibold text-xs sm:text-sm transition-colors cursor-pointer shadow-sm"
             >
-              <span>Update Today's RSVP</span>
+              <Utensils className="w-4 h-4 text-slate-950" />
+              <span>Order Food Tray</span>
+            </button>
+            <button
+              onClick={() => onNavigate('my-orders')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium text-xs sm:text-sm border border-white/20 transition-colors cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4 text-lime-300" />
+              <span>My Orders & Receipts</span>
+            </button>
+            <button
+              onClick={() => onNavigate('meal-rsvp')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium text-xs sm:text-sm border border-white/20 transition-colors cursor-pointer"
+            >
+              <span>Meal RSVP</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
@@ -76,7 +90,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate }
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium text-xs sm:text-sm border border-white/20 transition-colors cursor-pointer"
             >
               <Tag className="w-4 h-4 text-lime-300" />
-              <span>Surplus Flash Sale ({offers.length} active)</span>
+              <span>Flash Sale ({offers.length})</span>
             </button>
           </div>
         </div>

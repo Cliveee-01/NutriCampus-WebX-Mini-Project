@@ -56,8 +56,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
+              onClick={() => onNavigate('admin-orders')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lime-400 hover:bg-lime-300 text-slate-950 font-semibold text-xs sm:text-sm transition-colors cursor-pointer shadow-sm"
+            >
+              <ShoppingBag className="w-4 h-4 text-slate-950" />
+              <span>Canteen Tray Orders</span>
+            </button>
+            <button
               onClick={() => onNavigate('demand-forecast')}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lime-400 hover:bg-lime-300 text-slate-950 font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium text-xs sm:text-sm border border-white/20 transition-colors cursor-pointer"
             >
               <span>Open Demand Forecast</span>
               <ArrowRight className="w-4 h-4" />
